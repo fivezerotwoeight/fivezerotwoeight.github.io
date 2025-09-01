@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>설문지 자동 통계표</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        .response-btn.selected {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 2px #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 sm:p-6 lg:p-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-gray-800">설문지 자동 통계표</h1>
+            <p class="mt-2 text-gray-600">설문지를 보면서 데이터를 입력하면 통계가 실시간으로 자동 집계됩니다.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Data Entry and Raw Data Section -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Data Entry Form -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h2 class="text-xl font-semibold text-gray-700 border-b pb-3 mb-4">데이터 입력</h2>
+                    <div id="entry-form" class="space-y-4">
+                        <div>
+                            <label for="age-group" class="block text-sm font-medium text-gray-700 mb-1">1. 연령대</label>
+                            <select id="age-group" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <option>10대</option>
+                                <option>20대</option>
+                                <option>30대</option>
+                                <option>40대</option>
+                                <option>50대</option>
+                                <option>60대 이상</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Yes/No Questions -->
+                        <div id="questions-container" class="space-y-3"></div>
+
+                        <button onclick="addResponse()" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300 shadow-sm">
+                            응답 추가하기
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Raw Data Log -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h2 class="text-xl font-semibold text-gray-700 mb-4">입력된 데이터 로그 (<span id="total-responses-log">0</span>개)</h2>
+                    <div class="h-96 overflow-y-auto border rounded-lg">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50 sticky top-0">
+                                <tr>
+                                    <th class="px-2 py-2 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">#</th>
+                                    <th class="px-2 py-2 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">연령</th>
+                                    <th class="px-2 py-2 text-left text-xs font-bold text-gray-500 uppercase tracking-wider" v-for="i in 5">문항 {{i}}</th>
+                                    <th class="px-2 py-2 text-left text-xs font-bold text-gray-500 uppercase tracking-wider"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="raw-data-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Data rows will be inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Section -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Summary Stats -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h2 class="text-xl font-semibold text-gray-700 border-b pb-3 mb-4">요약 통계</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Age Distribution -->
+                        <div>
+                            <h3 class="font-semibold text-gray-800 mb-3">연령대별 분포 (총 <span id="total-responses-summary">0</span>명)</h3>
+                            <table class="min-w-full bg-white border rounded-lg">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">연령대</th>
+                                        <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">응답 수</th>
+                                        <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">비율</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="age-summary-body" class="divide-y divide-gray-200">
+                                    <!-- Age summary rows will be inserted here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Question Summary -->
+                        <div>
+                            <h3 class="font-semibold text-gray-800 mb-3">문항별 응답 요약</h3>
+                             <table class="min-w-full bg-white border rounded-lg">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">문항</th>
+                                        <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">그렇다</th>
+                                        <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">아니다</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="question-summary-body" class="divide-y divide-gray-200">
+                                    <!-- Question summary rows will be inserted here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Crosstabulation Section -->
+                 <div class="bg-white p-6 rounded-xl shadow-md">
+                    <div class="flex justify-between items-center border-b pb-3 mb-4">
+                         <h2 class="text-xl font-semibold text-gray-700">연령대별 상세 응답 (교차 분석)</h2>
+                         <div>
+                            <label for="crosstab-select" class="mr-2 text-sm font-medium">문항 선택:</label>
+                            <select id="crosstab-select" onchange="renderCrosstab()" class="p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            </select>
+                         </div>
+                    </div>
+                    <div id="crosstab-container">
+                        <!-- Crosstab table will be rendered here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const NUM_QUESTIONS = 5;
+        const AGE_GROUPS = ['10대', '20대', '30대', '40대', '50대', '60대 이상'];
+        let responses = [];
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeApp();
+        });
+        
+        function initializeApp() {
+            const questionsContainer = document.getElementById('questions-container');
+            const crosstabSelect = document.getElementById('crosstab-select');
+            
+            // Create question inputs
+            for (let i = 1; i <= NUM_QUESTIONS; i++) {
+                questionsContainer.innerHTML += `
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">${i + 1}. 문항 ${i}</label>
+                        <div class="flex gap-2" id="q${i}-btns">
+                            <button onclick="selectResponse('q${i}', '그렇다', this)" class="response-btn flex-1 p-2 border rounded-md" data-question="q${i}" data-value="그렇다">그렇다</button>
+                            <button onclick="selectResponse('q${i}', '아니다', this)" class="response-btn flex-1 p-2 border rounded-md" data-question="q${i}" data-value="아니다">아니다</button>
+                        </div>
+                    </div>
+                `;
+                // Create crosstab select options
+                crosstabSelect.innerHTML += `<option value="q${i}">문항 ${i}</option>`;
+            }
+            updateStatistics();
+        }
+        
+        function selectResponse(question, value, element) {
+            // Remove 'selected' from sibling buttons
+            document.querySelectorAll(`#${question}-btns .response-btn`).forEach(btn => {
+                btn.classList.remove('selected', 'bg-blue-500', 'text-white', 'border-blue-500');
+            });
+            // Add 'selected' to clicked button
+            element.classList.add('selected', 'bg-blue-500', 'text-white', 'border-blue-500');
+        }
+
+
+        // --- Data Handling ---
+        function addResponse() {
+            const ageGroup = document.getElementById('age-group').value;
+            const newResponse = { id: Date.now(), age: ageGroup };
+            
+            let allAnswered = true;
+            for (let i = 1; i <= NUM_QUESTIONS; i++) {
+                const selectedButton = document.querySelector(`#q${i}-btns .response-btn.selected`);
+                if (selectedButton) {
+                    newResponse[`q${i}`] = selectedButton.dataset.value;
+                } else {
+                    allAnswered = false;
+                    break;
+                }
+            }
+
+            if (!allAnswered) {
+                alert('모든 문항에 답변을 선택해주세요.');
+                return;
+            }
+
+            responses.push(newResponse);
+            updateStatistics();
+            resetForm();
+        }
+        
+        function deleteResponse(id) {
+            if (confirm('이 응답을 정말 삭제하시겠습니까?')) {
+                responses = responses.filter(r => r.id !== id);
+                updateStatistics();
+            }
+        }
+
+        function resetForm() {
+            document.querySelectorAll('.response-btn').forEach(btn => {
+                btn.classList.remove('selected', 'bg-blue-500', 'text-white', 'border-blue-500');
+            });
+            document.getElementById('age-group').focus();
+        }
+
+        // --- UI Rendering ---
+        function updateStatistics() {
+            renderRawData();
+            renderAgeSummary();
+            renderQuestionSummary();
+            renderCrosstab();
+
+            // Update total counts
+            const total = responses.length;
+            document.getElementById('total-responses-log').textContent = total;
+            document.getElementById('total-responses-summary').textContent = total;
+        }
+
+        function renderRawData() {
+            const tbody = document.getElementById('raw-data-body');
+            tbody.innerHTML = '';
+            responses.forEach((res, index) => {
+                let rowHtml = `<tr class="hover:bg-gray-50">
+                    <td class="px-2 py-2 text-sm text-gray-500">${index + 1}</td>
+                    <td class="px-2 py-2 text-sm text-gray-900">${res.age}</td>`;
+                
+                for(let i = 1; i <= NUM_QUESTIONS; i++) {
+                   const answer = res[`q${i}`];
+                   const colorClass = answer === '그렇다' ? 'text-green-600' : 'text-red-600';
+                   rowHtml += `<td class="px-2 py-2 text-sm font-medium ${colorClass}">${answer}</td>`;
+                }
+
+                rowHtml += `<td class="px-2 py-2 text-right">
+                                <button onclick="deleteResponse(${res.id})" class="text-red-500 hover:text-red-700 text-xs">삭제</button>
+                           </td></tr>`;
+                tbody.innerHTML += rowHtml;
+            });
+        }
+
+        function renderAgeSummary() {
+            const tbody = document.getElementById('age-summary-body');
+            const total = responses.length;
+            tbody.innerHTML = '';
+
+            const counts = AGE_GROUPS.reduce((acc, age) => ({ ...acc, [age]: 0 }), {});
+            responses.forEach(res => counts[res.age]++);
+
+            AGE_GROUPS.forEach(age => {
+                const count = counts[age];
+                const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="px-4 py-2 text-sm font-medium text-gray-900">${age}</td>
+                        <td class="px-4 py-2 text-sm text-gray-700">${count}</td>
+                        <td class="px-4 py-2 text-sm text-gray-700">${percentage}%</td>
+                    </tr>
+                `;
+            });
+        }
+        
+        function renderQuestionSummary() {
+            const tbody = document.getElementById('question-summary-body');
+            tbody.innerHTML = '';
+            
+            for (let i = 1; i <= NUM_QUESTIONS; i++) {
+                const qKey = `q${i}`;
+                const yesCount = responses.filter(r => r[qKey] === '그렇다').length;
+                const noCount = responses.filter(r => r[qKey] === '아니다').length;
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="px-4 py-2 text-sm font-medium text-gray-900">문항 ${i}</td>
+                        <td class="px-4 py-2 text-sm text-gray-700">${yesCount}</td>
+                        <td class="px-4 py-2 text-sm text-gray-700">${noCount}</td>
+                    </tr>
+                `;
+            }
+        }
+        
+        function renderCrosstab() {
+            const container = document.getElementById('crosstab-container');
+            const selectedQuestion = document.getElementById('crosstab-select').value;
+            if (!selectedQuestion) return;
+
+            const counts = {};
+            AGE_GROUPS.forEach(age => {
+                counts[age] = { '그렇다': 0, '아니다': 0 };
+            });
+
+            responses.forEach(res => {
+                if(counts[res.age]){
+                    counts[res.age][res[selectedQuestion]]++;
+                }
+            });
+
+            let tableHtml = `<div class="overflow-x-auto"><table class="min-w-full bg-white border rounded-lg">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">연령대</th>
+                        <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">그렇다</th>
+                        <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">아니다</th>
+                        <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">총계</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">`;
+
+            AGE_GROUPS.forEach(age => {
+                const yes = counts[age]['그렇다'];
+                const no = counts[age]['아니다'];
+                const total = yes + no;
+                tableHtml += `
+                    <tr>
+                        <td class="px-4 py-2 text-sm font-medium text-gray-900">${age}</td>
+                        <td class="px-4 py-2 text-sm text-gray-700">${yes}</td>
+                        <td class="px-4 py-2 text-sm text-gray-700">${no}</td>
+                        <td class="px-4 py-2 text-sm font-bold text-gray-800">${total}</td>
+                    </tr>
+                `;
+            });
+
+            tableHtml += '</tbody></table></div>';
+            container.innerHTML = tableHtml;
+        }
+
+    </script>
+</body>
+</html>
